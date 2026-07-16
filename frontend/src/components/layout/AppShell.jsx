@@ -3,14 +3,25 @@ import { NavLink, Outlet } from 'react-router-dom'
 import iguanaLogo from '../../assets/iguana-software.png'
 import { useAuth } from '../../context/useAuth'
 
-const navItems = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/facturacion', label: 'Facturacion' },
-  { to: '/facturacion/nueva', label: 'Nueva factura' },
-  { to: '/inventario', label: 'Inventario' },
-  { to: '/contabilidad', label: 'Contabilidad' },
-  { to: '/reportes', label: 'Reportes' },
-  { to: '/productividad', label: 'Productividad' },
+const navGroups = [
+  {
+    label: 'Operacion',
+    items: [
+      { to: '/', label: 'Dashboard' },
+      { to: '/facturacion', label: 'Facturacion' },
+      { to: '/facturacion/nueva', label: 'Nueva factura' },
+      { to: '/inventario', label: 'Inventario' },
+    ],
+  },
+  {
+    label: 'Gestion',
+    items: [
+      { to: '/contabilidad', label: 'Contabilidad' },
+      { to: '/reportes', label: 'Reportes' },
+      { to: '/productividad', label: 'Productividad' },
+      { to: '/configuracion', label: 'Configuracion' },
+    ],
+  },
 ]
 
 export function AppShell() {
@@ -27,15 +38,20 @@ export function AppShell() {
           </div>
         </div>
         <nav className="sidebar__nav" aria-label="Principal">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) => (isActive ? 'nav-link is-active' : 'nav-link')}
-            >
-              {item.label}
-            </NavLink>
+          {navGroups.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <span>{group.label}</span>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) => (isActive ? 'nav-link is-active' : 'nav-link')}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="developer-card">

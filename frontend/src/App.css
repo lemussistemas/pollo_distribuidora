@@ -42,6 +42,20 @@
   gap: 8px;
 }
 
+.nav-group {
+  display: grid;
+  gap: 7px;
+}
+
+.nav-group > span {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  padding: 8px 12px 2px;
+  text-transform: uppercase;
+}
+
 .developer-card {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -279,12 +293,30 @@
   padding: 34px;
 }
 
+.inventory-hero,
+.settings-hero {
+  background:
+    linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(37, 99, 235, 0.85)),
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.35), transparent 34%);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 34px;
+}
+
 .dashboard-hero .eyebrow,
 .dashboard-hero h2,
 .productivity-hero .eyebrow,
 .productivity-hero h2,
 .accounting-hero .eyebrow,
-.accounting-hero h2 {
+.accounting-hero h2,
+.inventory-hero .eyebrow,
+.inventory-hero h2,
+.settings-hero .eyebrow,
+.settings-hero h2 {
   color: white;
 }
 
@@ -298,6 +330,19 @@
 .dashboard-hero p,
 .productivity-hero p,
 .accounting-hero p {
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 12px;
+  max-width: 680px;
+}
+
+.inventory-hero h2,
+.settings-hero h2 {
+  font-size: clamp(30px, 5vw, 52px);
+  max-width: 760px;
+}
+
+.inventory-hero p,
+.settings-hero p {
   color: rgba(255, 255, 255, 0.82);
   margin-top: 12px;
   max-width: 680px;
@@ -379,6 +424,10 @@
   display: grid;
   gap: 18px;
   grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr) minmax(320px, 1fr);
+}
+
+.productivity-grid--wide {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .productivity-form {
@@ -752,6 +801,159 @@ th {
   text-decoration: none;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.button--danger {
+  background: var(--danger);
+}
+
+.button--sm {
+  border-radius: 10px;
+  font-size: 13px;
+  padding: 7px 10px;
+}
+
+.badge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 9px;
+}
+
+.badge--danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge--neutral {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.badge--success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.data-table {
+  display: grid;
+  gap: 14px;
+}
+
+.table-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.table-toolbar input {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: min(360px, 100%);
+  padding: 10px 12px;
+}
+
+.table-toolbar span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.table-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.empty-panel {
+  background: #f9fafb;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  display: grid;
+  gap: 6px;
+  padding: 22px;
+  text-align: center;
+}
+
+.empty-panel strong {
+  color: var(--text-h);
+}
+
+.tabs {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+}
+
+.tab {
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 900;
+  padding: 10px 14px;
+  text-transform: capitalize;
+}
+
+.tab.is-active {
+  background: var(--accent);
+  color: white;
+}
+
+.inventory-grid,
+.settings-grid {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
+}
+
+.inventory-form,
+.settings-form {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inventory-form label,
+.settings-form label {
+  color: var(--text-h);
+  display: grid;
+  gap: 7px;
+  font-weight: 800;
+}
+
+.inventory-form input,
+.inventory-form select,
+.inventory-form textarea,
+.settings-form input,
+.settings-form select,
+.settings-form textarea {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.inventory-form__full,
+.settings-form__full {
+  grid-column: 1 / -1;
+}
+
 .form-grid {
   display: grid;
   gap: 16px;
@@ -808,7 +1010,9 @@ th {
   .page-heading,
   .dashboard-hero,
   .productivity-hero,
-  .accounting-hero {
+  .accounting-hero,
+  .inventory-hero,
+  .settings-hero {
     align-items: start;
     flex-direction: column;
   }
@@ -835,7 +1039,12 @@ th {
   .accounting-grid,
   .accounting-grid--wide,
   .accounting-form,
+  .inventory-grid,
+  .inventory-form,
+  .settings-grid,
+  .settings-form,
   .productivity-grid,
+  .productivity-grid--wide,
   .productivity-form {
     grid-template-columns: 1fr;
   }

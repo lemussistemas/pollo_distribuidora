@@ -26,6 +26,17 @@ class JournalEntrySerializer(serializers.ModelSerializer):
         model = JournalEntry
         fields = '__all__'
 
+    def validate(self, attrs):
+        lines = attrs.get('lines')
+        if lines is not None:
+            debit_total = sum(line.get('debit', 0) for line in lines)
+            credit_total = sum(line.get('credit', 0) for line in lines)
+            if debit_total != credit_total:
+                raise serializers.ValidationError('El asiento no cuadra: el debe debe ser igual al haber.')
+            if not lines:
+                raise serializers.ValidationError('El asiento necesita al menos una linea.')
+        return attrs
+
     def create(self, validated_data):
         lines_data = validated_data.pop('lines', [])
         entry = JournalEntry.objects.create(**validated_data)

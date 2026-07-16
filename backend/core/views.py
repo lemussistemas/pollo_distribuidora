@@ -1,6 +1,9 @@
 from django.contrib.auth import authenticate
-from rest_framework import decorators, permissions, response, status
+from rest_framework import decorators, permissions, response, status, viewsets
 from rest_framework.authtoken.models import Token
+
+from .models import CompanyProfile
+from .serializers import CompanyProfileSerializer
 
 
 def serialize_user(user):
@@ -40,3 +43,13 @@ def logout_view(request):
 @decorators.api_view(['GET'])
 def me_view(request):
     return response.Response({'user': serialize_user(request.user)})
+
+
+class CompanyProfileViewSet(viewsets.ModelViewSet):
+    queryset = CompanyProfile.objects.all()
+    serializer_class = CompanyProfileSerializer
+
+    def list(self, request, *args, **kwargs):
+        profile, _ = CompanyProfile.objects.get_or_create(pk=1)
+        serializer = self.get_serializer(profile)
+        return response.Response(serializer.data)

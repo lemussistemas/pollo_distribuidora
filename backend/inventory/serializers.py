@@ -12,6 +12,7 @@ class WarehouseSerializer(serializers.ModelSerializer):
 class StockLevelSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_sku = serializers.CharField(source='product.sku', read_only=True)
+    minimum_stock = serializers.DecimalField(source='product.minimum_stock', max_digits=12, decimal_places=3, read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
 
     class Meta:

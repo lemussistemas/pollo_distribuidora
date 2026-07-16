@@ -198,9 +198,11 @@ export function AccountingPage() {
       </section>
 
       <div className="report-actions">
-        <button className="button" type="button" onClick={createDemoAccounting} disabled={saving}>
-          Crear datos demo
-        </button>
+        {import.meta.env.DEV && (
+          <button className="button" type="button" onClick={createDemoAccounting} disabled={saving}>
+            Crear datos demo
+          </button>
+        )}
         <button className="button button--light" type="button" onClick={() => window.print()}>
           Imprimir contabilidad
         </button>

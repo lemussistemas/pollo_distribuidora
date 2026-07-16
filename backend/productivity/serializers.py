@@ -16,6 +16,13 @@ class ProductivityGoalSerializer(serializers.ModelSerializer):
         model = ProductivityGoal
         fields = '__all__'
 
+    def validate(self, attrs):
+        starts_on = attrs.get('starts_on', getattr(self.instance, 'starts_on', None))
+        ends_on = attrs.get('ends_on', getattr(self.instance, 'ends_on', None))
+        if starts_on and ends_on and ends_on < starts_on:
+            raise serializers.ValidationError('La fecha final de la meta debe ser mayor o igual a la fecha inicial.')
+        return attrs
+
 
 class ProductivityRecordSerializer(serializers.ModelSerializer):
     metric_name = serializers.CharField(source='metric.name', read_only=True)

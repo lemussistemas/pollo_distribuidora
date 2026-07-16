@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import CaiRange, Customer, Invoice, InvoiceLine, Payment
-from .services import recalculate_invoice
+from .services import recalculate_invoice, refresh_invoice_payment_status
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -30,6 +30,11 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+
+    def create(self, validated_data):
+        payment = Payment.objects.create(**validated_data)
+        refresh_invoice_payment_status(payment.invoice)
+        return payment
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
@@ -61,6 +66,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return invoice
 
     def update(self, instance, validated_data):
+        if instance.status != Invoice.Status.DRAFT:
+            raise serializers.ValidationError('Solo se pueden editar facturas en borrador.')
         lines_data = validated_data.pop('lines', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react'
 import {
   getIncomeStatement,
   getInventoryReport,
+  getSalesByCustomer,
+  getSalesByProduct,
+  getTrialBalance,
   getProductivityReport,
   getSalesReport,
 } from '../../api/services/reports'
@@ -25,13 +28,16 @@ export function ReportsPage() {
     try {
       setLoading(true)
       setError('')
-      const [sales, inventory, productivity, income] = await Promise.all([
+      const [sales, inventory, productivity, income, salesByProduct, salesByCustomer, trialBalance] = await Promise.all([
         getSalesReport(activeFilters),
         getInventoryReport(activeFilters),
         getProductivityReport(activeFilters),
         getIncomeStatement(activeFilters),
+        getSalesByProduct(activeFilters),
+        getSalesByCustomer(activeFilters),
+        getTrialBalance(activeFilters),
       ])
-      setReports({ sales, inventory, productivity, income })
+      setReports({ sales, inventory, productivity, income, salesByProduct, salesByCustomer, trialBalance })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -180,6 +186,42 @@ export function ReportsPage() {
               { key: 'metric__unit', label: 'Unidad' },
             ]}
             rows={reports.productivity?.metrics ?? []}
+          />
+        </Card>
+        <Card title="Ventas por producto">
+          <DataTable
+            searchable
+            columns={[
+              { key: 'product__sku', label: 'SKU' },
+              { key: 'product__name', label: 'Producto' },
+              { key: 'quantity', label: 'Cantidad' },
+              { key: 'total', label: 'Total', render: (row) => money.format(row.total ?? 0) },
+            ]}
+            rows={reports.salesByProduct?.results ?? []}
+          />
+        </Card>
+        <Card title="Ventas por cliente">
+          <DataTable
+            searchable
+            columns={[
+              { key: 'customer__name', label: 'Cliente' },
+              { key: 'customer__rtn', label: 'RTN' },
+              { key: 'invoice_count', label: 'Facturas' },
+              { key: 'total', label: 'Total', render: (row) => money.format(row.total ?? 0) },
+            ]}
+            rows={reports.salesByCustomer?.results ?? []}
+          />
+        </Card>
+        <Card title="Balanza de comprobacion">
+          <DataTable
+            searchable
+            columns={[
+              { key: 'account__code', label: 'Cuenta' },
+              { key: 'account__name', label: 'Nombre' },
+              { key: 'debit', label: 'Debe', render: (row) => money.format(row.debit ?? 0) },
+              { key: 'credit', label: 'Haber', render: (row) => money.format(row.credit ?? 0) },
+            ]}
+            rows={reports.trialBalance?.results ?? []}
           />
         </Card>
       </div>

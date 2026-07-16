@@ -15,6 +15,15 @@ export function ProductivityPage() {
   const [records, setRecords] = useState([])
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [filters, setFilters] = useState({ employee: '', metric: 'all' })
+  const [metricForm, setMetricForm] = useState({ name: '', unit: 'unidad', description: '' })
+  const [goalForm, setGoalForm] = useState({
+    metric: '',
+    name: '',
+    target_value: '',
+    starts_on: today,
+    ends_on: today,
+  })
   const [recordForm, setRecordForm] = useState({
     metric: '',
     recorded_on: today,
@@ -33,6 +42,10 @@ export function ProductivityPage() {
     setGoals(goalRows)
     setRecords(recordRows)
     setRecordForm((current) => ({
+      ...current,
+      metric: current.metric || metricRows[0]?.id || '',
+    }))
+    setGoalForm((current) => ({
       ...current,
       metric: current.metric || metricRows[0]?.id || '',
     }))
@@ -77,9 +90,54 @@ export function ProductivityPage() {
     }, {})
 
   const topEmployeeName = Object.entries(topEmployee).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Sin registros'
+  const filteredRecords = records.filter((record) => {
+    const matchEmployee = !filters.employee || record.employee_name?.toLowerCase().includes(filters.employee.toLowerCase())
+    const matchMetric = filters.metric === 'all' || String(record.metric) === String(filters.metric)
+    return matchEmployee && matchMetric
+  })
 
   function updateRecordForm(field, value) {
     setRecordForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateMetricForm(field, value) {
+    setMetricForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateGoalForm(field, value) {
+    setGoalForm((current) => ({ ...current, [field]: value }))
+  }
+
+  async function submitMetric(event) {
+    event.preventDefault()
+    setSaving(true)
+    setMessage('')
+    try {
+      await createResource('/productivity-metrics/', metricForm)
+      await loadProductivity()
+      setMetricForm({ name: '', unit: 'unidad', description: '' })
+      setMessage('Metrica creada correctamente.')
+    } catch (err) {
+      setMessage(`No se pudo crear metrica: ${err.message}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function submitGoal(event) {
+    event.preventDefault()
+    setSaving(true)
+    setMessage('')
+    try {
+      await createResource('/productivity-goals/', goalForm)
+      await loadProductivity()
+      setGoalForm((current) => ({ ...current, name: '', target_value: '' }))
+      setMessage('Meta creada correctamente.')
+    } catch (err) {
+      setMessage(`No se pudo crear meta: ${err.message}`)
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function createDemoProductivity() {
@@ -172,9 +230,11 @@ export function ProductivityPage() {
       </section>
 
       <div className="report-actions">
-        <button className="button" type="button" onClick={createDemoProductivity} disabled={saving}>
-          Crear datos demo
-        </button>
+        {import.meta.env.DEV && (
+          <button className="button" type="button" onClick={createDemoProductivity} disabled={saving}>
+            Crear datos demo
+          </button>
+        )}
         <button className="button button--light" type="button" onClick={() => window.print()}>
           Imprimir tablero
         </button>
@@ -240,8 +300,43 @@ export function ProductivityPage() {
         </Card>
       </div>
 
+      <div className="productivity-grid productivity-grid--wide">
+        <Card title="Nueva metrica" eyebrow="Configuracion">
+          <form className="productivity-form" onSubmit={submitMetric}>
+            <label>Nombre<input value={metricForm.name} onChange={(event) => updateMetricForm('name', event.target.value)} required /></label>
+            <label>Unidad<input value={metricForm.unit} onChange={(event) => updateMetricForm('unit', event.target.value)} required /></label>
+            <label className="productivity-form__full">Descripcion<textarea value={metricForm.description} onChange={(event) => updateMetricForm('description', event.target.value)} /></label>
+            <button className="button" type="submit" disabled={saving}>Guardar metrica</button>
+          </form>
+        </Card>
+        <Card title="Nueva meta" eyebrow="Objetivos">
+          <form className="productivity-form" onSubmit={submitGoal}>
+            <label>Metrica<select value={goalForm.metric} onChange={(event) => updateGoalForm('metric', event.target.value)}>{metrics.map((metric) => <option key={metric.id} value={metric.id}>{metric.name}</option>)}</select></label>
+            <label>Nombre<input value={goalForm.name} onChange={(event) => updateGoalForm('name', event.target.value)} required /></label>
+            <label>Objetivo<input type="number" step="0.01" value={goalForm.target_value} onChange={(event) => updateGoalForm('target_value', event.target.value)} required /></label>
+            <label>Inicio<input type="date" value={goalForm.starts_on} onChange={(event) => updateGoalForm('starts_on', event.target.value)} /></label>
+            <label>Fin<input type="date" value={goalForm.ends_on} onChange={(event) => updateGoalForm('ends_on', event.target.value)} /></label>
+            <button className="button" type="submit" disabled={saving || !metrics.length}>Guardar meta</button>
+          </form>
+        </Card>
+      </div>
+
       <Card title="Bitacora de productividad" eyebrow="Ultimos registros">
+        <form className="filters-form">
+          <label>
+            Empleado
+            <input value={filters.employee} onChange={(event) => setFilters((current) => ({ ...current, employee: event.target.value }))} placeholder="Filtrar empleado" />
+          </label>
+          <label>
+            Metrica
+            <select value={filters.metric} onChange={(event) => setFilters((current) => ({ ...current, metric: event.target.value }))}>
+              <option value="all">Todas</option>
+              {metrics.map((metric) => <option key={metric.id} value={metric.id}>{metric.name}</option>)}
+            </select>
+          </label>
+        </form>
         <DataTable
+          searchable
           columns={[
             { key: 'recorded_on', label: 'Fecha' },
             { key: 'metric_name', label: 'Metrica' },
@@ -250,7 +345,7 @@ export function ProductivityPage() {
             { key: 'employee_name', label: 'Empleado' },
             { key: 'notes', label: 'Nota' },
           ]}
-          rows={records}
+          rows={filteredRecords}
         />
       </Card>
     </div>

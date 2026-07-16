@@ -5,12 +5,14 @@ import { AuthProvider } from '../context/AuthContext'
 import { useAuth } from '../context/useAuth'
 import { AccountingPage } from '../pages/contabilidad/AccountingPage'
 import { DashboardPage } from '../pages/DashboardPage'
+import { InvoiceDetailPage } from '../pages/facturacion/InvoiceDetailPage'
 import { InvoicesPage } from '../pages/facturacion/InvoicesPage'
 import { NewInvoicePage } from '../pages/facturacion/NewInvoicePage'
 import { InventoryPage } from '../pages/inventario/InventoryPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ProductivityPage } from '../pages/productividad/ProductivityPage'
 import { ReportsPage } from '../pages/reportes/ReportsPage'
+import { SettingsPage } from '../pages/configuracion/SettingsPage'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -42,11 +44,13 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'facturacion', element: <InvoicesPage /> },
+      { path: 'facturacion/:id', element: <InvoiceDetailPage /> },
       { path: 'facturacion/nueva', element: <NewInvoicePage /> },
       { path: 'inventario', element: <InventoryPage /> },
       { path: 'contabilidad', element: <AccountingPage /> },
       { path: 'reportes', element: <ReportsPage /> },
       { path: 'productividad', element: <ProductivityPage /> },
+      { path: 'configuracion', element: <SettingsPage /> },
     ],
   },
 ])

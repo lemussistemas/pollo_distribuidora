@@ -8,7 +8,10 @@ export function LoginPage() {
   const { isAuthenticated, login } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ username: 'admin', password: 'PolloRey2026' })
+  const [form, setForm] = useState({
+    username: import.meta.env.DEV ? 'admin' : '',
+    password: import.meta.env.DEV ? 'PolloRey2026' : '',
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -80,9 +83,11 @@ export function LoginPage() {
             {loading ? 'Entrando...' : 'Entrar al sistema'}
           </button>
         </form>
-        <div className="login-demo">
-          <strong>Demo:</strong> usuario <code>admin</code> / clave <code>PolloRey2026</code>
-        </div>
+        {import.meta.env.DEV && (
+          <div className="login-demo">
+            <strong>Demo:</strong> usuario <code>admin</code> / clave <code>PolloRey2026</code>
+          </div>
+        )}
       </section>
     </main>
   )

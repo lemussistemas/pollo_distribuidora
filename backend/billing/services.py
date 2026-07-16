@@ -1,10 +1,12 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from accounting.models import Account, JournalEntry, JournalLine
-from inventory.models import StockMovement
+from inventory.models import StockLevel, StockMovement
 from inventory.services import register_stock_movement
 
 from .models import Invoice
@@ -69,11 +71,44 @@ def create_sales_journal_entry(invoice):
     return entry
 
 
+def validate_cai_range(cai_range):
+    if not cai_range:
+        return
+    today = timezone.localdate()
+    if not cai_range.is_active:
+        raise ValidationError({'cai_range': 'El rango CAI seleccionado no esta activo.'})
+    if cai_range.expiration_date < today:
+        raise ValidationError({'cai_range': 'El rango CAI seleccionado esta vencido.'})
+    if cai_range.current_number > cai_range.end_number:
+        raise ValidationError({'cai_range': 'El rango CAI seleccionado ya fue agotado.'})
+
+
+def validate_invoice_stock(invoice):
+    for line in invoice.lines.select_related('product'):
+        stock_level = StockLevel.objects.filter(product=line.product, warehouse=invoice.warehouse).first()
+        available = stock_level.quantity if stock_level else Decimal('0')
+        if available < line.quantity:
+            raise ValidationError(
+                {
+                    'stock': (
+                        f'Stock insuficiente para {line.product.name}. '
+                        f'Disponible: {available}, solicitado: {line.quantity}.'
+                    )
+                }
+            )
+
+
 @transaction.atomic
 def issue_invoice(invoice):
     invoice = Invoice.objects.select_for_update().prefetch_related('lines__product').get(pk=invoice.pk)
     if invoice.status != Invoice.Status.DRAFT:
         return invoice
+
+    if not invoice.lines.exists():
+        raise ValidationError({'lines': 'La factura necesita al menos una linea de producto.'})
+
+    validate_cai_range(invoice.cai_range)
+    validate_invoice_stock(invoice)
 
     cai_range = invoice.cai_range
     if cai_range and not invoice.invoice_number:
@@ -105,4 +140,57 @@ def issue_invoice(invoice):
         )
 
     create_sales_journal_entry(invoice)
+    return invoice
+
+
+@transaction.atomic
+def cancel_invoice(invoice, reason='Anulacion de factura'):
+    invoice = Invoice.objects.select_for_update().prefetch_related('lines__product').get(pk=invoice.pk)
+    if invoice.status == Invoice.Status.CANCELLED:
+        return invoice
+    if invoice.status == Invoice.Status.DRAFT:
+        invoice.status = Invoice.Status.CANCELLED
+        invoice.notes = f'{invoice.notes}\n{reason}'.strip()
+        invoice.save(update_fields=['status', 'notes', 'updated_at'])
+        return invoice
+
+    for line in invoice.lines.select_related('product'):
+        register_stock_movement(
+            product=line.product,
+            warehouse=invoice.warehouse,
+            movement_type=StockMovement.MovementType.ADJUSTMENT,
+            quantity=line.quantity,
+            unit_cost=line.product.cost,
+            reference=f'ANULA-{invoice.invoice_number}',
+            notes=f'Reversa por anulacion. {reason}',
+        )
+
+    invoice.status = Invoice.Status.CANCELLED
+    invoice.notes = f'{invoice.notes}\n{reason}'.strip()
+    invoice.save(update_fields=['status', 'notes', 'updated_at'])
+
+    reversal = JournalEntry.objects.create(
+        date=timezone.localdate(),
+        description=f'Anulacion factura {invoice.invoice_number}',
+        reference=f'ANULA-{invoice.invoice_number}',
+        source='billing-cancel',
+    )
+    cash = get_or_create_account('1101', 'Caja y bancos', Account.AccountType.ASSET)
+    sales = get_or_create_account('4101', 'Ingresos por ventas', Account.AccountType.REVENUE)
+    tax_payable = get_or_create_account('2101', 'Impuesto sobre ventas por pagar', Account.AccountType.LIABILITY)
+    JournalLine.objects.bulk_create(
+        [
+            JournalLine(entry=reversal, account=sales, debit=invoice.subtotal - invoice.discount_total, credit=0),
+            JournalLine(entry=reversal, account=tax_payable, debit=invoice.tax_total, credit=0),
+            JournalLine(entry=reversal, account=cash, debit=0, credit=invoice.total),
+        ]
+    )
+    return invoice
+
+
+def refresh_invoice_payment_status(invoice):
+    paid_total = invoice.payments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    if invoice.status in [Invoice.Status.ISSUED, Invoice.Status.PAID]:
+        invoice.status = Invoice.Status.PAID if paid_total >= invoice.total else Invoice.Status.ISSUED
+        invoice.save(update_fields=['status', 'updated_at'])
     return invoice

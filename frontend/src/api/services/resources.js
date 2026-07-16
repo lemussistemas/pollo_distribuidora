@@ -42,11 +42,33 @@ export async function createResource(path, payload) {
   }
 }
 
-export async function issueInvoice(id) {
+export async function updateResource(path, payload) {
   try {
-    const { data } = await api.post(`/invoices/${id}/issue/`)
+    const { data } = await api.patch(path, payload)
     return data
   } catch (error) {
     throw new Error(formatApiError(error))
   }
+}
+
+export async function deleteResource(path) {
+  try {
+    const { data } = await api.delete(path)
+    return data
+  } catch (error) {
+    throw new Error(formatApiError(error))
+  }
+}
+
+export async function postAction(path, payload = {}) {
+  try {
+    const { data } = await api.post(path, payload)
+    return data
+  } catch (error) {
+    throw new Error(formatApiError(error))
+  }
+}
+
+export async function issueInvoice(id) {
+  return postAction(`/invoices/${id}/issue/`)
 }

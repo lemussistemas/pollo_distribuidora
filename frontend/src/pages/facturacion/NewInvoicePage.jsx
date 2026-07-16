@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { createResource, issueInvoice, listResource } from '../../api/services/resources'
+import { PrintableInvoice } from '../../components/billing/PrintableInvoice'
 import { Card } from '../../components/ui/Card'
 
 const money = new Intl.NumberFormat('es-HN', {
@@ -346,9 +347,11 @@ export function NewInvoicePage() {
           <p>Crea una factura emitida, calcula ISV y genera una vista imprimible para clientes.</p>
         </div>
         <div className="report-actions">
-          <button className="button button--light" type="button" onClick={createDemoData} disabled={saving}>
-            Crear datos demo
-          </button>
+          {import.meta.env.DEV && (
+            <button className="button button--light" type="button" onClick={createDemoData} disabled={saving}>
+              Crear datos demo
+            </button>
+          )}
           {createdInvoice && (
             <button className="button" type="button" onClick={() => window.print()}>
               Imprimir factura
@@ -513,7 +516,7 @@ export function NewInvoicePage() {
           {message && <p className="form-message">{message}</p>}
         </Card>
         <Card title="Vista para cliente" eyebrow="Factura">
-          <InvoicePreview
+          <PrintableInvoice
             customer={selectedCustomer}
             invoice={createdInvoice}
             lines={form.lines}
@@ -523,88 +526,6 @@ export function NewInvoicePage() {
           />
         </Card>
       </div>
-    </div>
-  )
-}
-
-function InvoicePreview({ customer, invoice, lines, products, totals, warehouse }) {
-  const printableLines = invoice?.lines?.length
-    ? invoice.lines
-    : lines.map((line) => {
-        const product = products.find((item) => String(item.id) === String(line.product))
-        const quantity = Number(line.quantity) || 0
-        const unitPrice = Number(line.unit_price) || 0
-        const discount = Number(line.discount) || 0
-        const tax = Math.max(quantity * unitPrice - discount, 0) * ((Number(line.tax_rate) || 0) / 100)
-        return {
-          ...line,
-          product_name: product?.name ?? 'Producto',
-          product_sku: product?.sku ?? '',
-          line_total: quantity * unitPrice - discount + tax,
-        }
-      })
-
-  return (
-    <div className="invoice-preview">
-      <div className="invoice-preview__header">
-        <div>
-          <span className="eyebrow">Distribuidora Pollo Rey</span>
-          <h3>Factura de venta</h3>
-          <p>Olanchito, Yoro, Honduras</p>
-        </div>
-        <div>
-          <strong>{invoice?.invoice_number ?? 'Vista previa'}</strong>
-          <span>{invoice?.status === 'issued' ? 'Emitida' : 'Sin emitir'}</span>
-        </div>
-      </div>
-      <div className="invoice-preview__meta">
-        <p>
-          <strong>Cliente:</strong> {customer?.name ?? 'Seleccione cliente'}
-        </p>
-        <p>
-          <strong>RTN:</strong> {customer?.rtn || 'Consumidor final'}
-        </p>
-        <p>
-          <strong>Almacen:</strong> {warehouse?.name ?? 'Seleccione almacen'}
-        </p>
-        <p>
-          <strong>CAI:</strong> {invoice?.cai || 'Pendiente de configurar'}
-        </p>
-      </div>
-      <table className="invoice-preview__table">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Cant.</th>
-            <th>Precio</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {printableLines.map((line, index) => (
-            <tr key={line.id ?? index}>
-              <td>
-                {line.product_sku ? `${line.product_sku} - ` : ''}
-                {line.product_name}
-              </td>
-              <td>{line.quantity}</td>
-              <td>{money.format(line.unit_price ?? 0)}</td>
-              <td>{money.format(line.line_total ?? 0)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="invoice-preview__totals">
-        <span>Subtotal</span>
-        <strong>{money.format(invoice?.subtotal ?? totals.subtotal)}</strong>
-        <span>Descuento</span>
-        <strong>{money.format(invoice?.discount_total ?? totals.discount)}</strong>
-        <span>ISV</span>
-        <strong>{money.format(invoice?.tax_total ?? totals.tax)}</strong>
-        <span>Total a pagar</span>
-        <strong>{money.format(invoice?.total ?? totals.total)}</strong>
-      </div>
-      <p className="invoice-preview__footer">Gracias por comprar en Distribuidora Pollo Rey, Olanchito.</p>
     </div>
   )
 }
