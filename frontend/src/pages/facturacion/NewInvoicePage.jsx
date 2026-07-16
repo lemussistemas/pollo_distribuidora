@@ -9,7 +9,7 @@ const money = new Intl.NumberFormat('es-HN', {
 })
 
 const emptyLine = {
-  id: crypto.randomUUID(),
+  id: 'id-' + Math.random().toString(36).substr(2, 9),
   product: '',
   quantity: '1',
   price_type: 'retail',
@@ -153,7 +153,7 @@ export function NewInvoicePage() {
   function addLine() {
     setForm((current) => ({
       ...current,
-      lines: [...current.lines, { ...emptyLine, id: crypto.randomUUID() }],
+      lines: [...current.lines, { ...emptyLine, id: 'id-' + Math.random().toString(36).substr(2, 9) }],
     }))
   }
 
